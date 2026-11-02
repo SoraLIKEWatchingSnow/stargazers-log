@@ -5,11 +5,13 @@ on:
     - cron: '0 0 * * *' # 每天凌晨 0 点自动执行一次
   workflow_dispatch:    # 允许你手动点击按钮执行
 
+# 核心修复：给这个机器人赋予写入文件的最高权限
+permissions:
+  contents: write
+
 jobs:
   update-stars:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,7 +26,7 @@ jobs:
             let stars = await github.paginate(github.rest.activity.listReposStarredByAuthenticatedUser, { per_page: 100 });
             
             let md = "# 🌟 我的标星日志 (Starred Repos)\n\n";
-            md += `最后更新时间: ${new Date().toLocaleString()}\n\n`;
+            md += `最后更新时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n\n`;
             
             stars.forEach(repo => {
               md += `- [${repo.full_name}](${repo.html_url}) : ${repo.description || '无描述'}\n`;
@@ -34,8 +36,11 @@ jobs:
 
       - name: Commit and Push
         run: |
-          git config --global user.name "GitHub Action"
+          git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add README.md
-          git commit -m "docs: auto-update starred logs" || exit 0
+          # 如果没有文件变更就跳过
+          git diff --quiet && git diff --staged --quiet || git commit -m "docs: auto-update starred logs"
+          # 拉取最新代码防止冲突，然后推送
+          git pull --rebase origin main || true
           git push
