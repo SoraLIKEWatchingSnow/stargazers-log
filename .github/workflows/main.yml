@@ -19,7 +19,8 @@ jobs:
       - name: Fetch Starred Repos
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # 这里通过 secrets.GH_PAT 引用你刚才在设置里配置的保险箱
+          github-token: ${{ secrets.GH_PAT }}
           script: |
             const fs = require('fs');
             // 获取你所有的 star 列表，最多获取 1000 个
